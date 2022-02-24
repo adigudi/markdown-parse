@@ -1,5 +1,5 @@
-[a text!](https://otherlink.com)
+[a [nested link](a.com)](b.com)
 
-[a \] \] \] \] text!](https://somethingelse.com)
+[a nested parenthesized url](a.com(()))
 
-[\](google.com)
+[some escaped \[ brackets \]](example.com)
