@@ -5,54 +5,55 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class MarkdownParse {
-
-    // Loop with a stack until finding the corresponding closeParen
-    static int findCloseParen(String markdown, int openParen) {
-        int closeParen = openParen + 1;
-        int openParenCount = 1;
-        while (openParenCount > 0) {
-            if (markdown.charAt(closeParen) == '(') {
-                openParenCount++;
-            } else if (markdown.charAt(closeParen) == ')') {
-                openParenCount--;
-            }
-            closeParen++;
-        }
-        return closeParen - 1;
-
-    }
     public static ArrayList<String> getLinks(String markdown) {
         ArrayList<String> toReturn = new ArrayList<>();
         // find the next [, then find the ], then find the (, then take up to
         // the next )
         int currentIndex = 0;
-        while(currentIndex < markdown.length()) {
+        while (currentIndex <= markdown.length()) {
             int nextOpenBracket = markdown.indexOf("[", currentIndex);
-            // System.out.format("%d\t%d\t%s\n", currentIndex, nextOpenBracket, toReturn);
+            if (nextOpenBracket == -1) {
+                break;
+            }
+            if (nextOpenBracket != 0 && markdown.charAt(nextOpenBracket - 1) == '!') {
+                currentIndex = nextOpenBracket + 1;
+                continue;
+            }
             int nextCloseBracket = markdown.indexOf("]", nextOpenBracket);
+            if (nextCloseBracket == -1) {
+                break;
+            }
+            while (markdown.charAt(nextCloseBracket - 1) == '\\' && markdown.charAt(nextCloseBracket - 2) != '\\') {
+                nextCloseBracket = markdown.indexOf("]", nextCloseBracket + 1);
+                if (nextCloseBracket == -1) {
+                    break;
+                }
+            }
             int openParen = markdown.indexOf("(", nextCloseBracket);
-
-            // The close paren we need may not be the next one in the file
-            int closeParen = findCloseParen(markdown, openParen);
+            if (openParen == -1) {
+                break;
+            }
             
-            if(nextOpenBracket == -1 || nextCloseBracket == -1
-                  || closeParen == -1 || openParen == -1) {
-                return toReturn;
+            int lineBreak = markdown.indexOf("\n", openParen);
+            int closeParen = markdown.indexOf(")", openParen);
+            if(closeParen == -1){
+                break;
             }
-            String potentialLink = markdown.substring(openParen + 1, closeParen).trim();
-            if(potentialLink.indexOf(" ") == -1 && potentialLink.indexOf("\n") == -1) {
-                toReturn.add(potentialLink);
+            if (lineBreak != -1 && lineBreak < closeParen) {
                 currentIndex = closeParen + 1;
+                continue;
             }
-            else {
-                currentIndex = currentIndex + 1;
+            if (nextCloseBracket + 1 == openParen) {
+                toReturn.add(markdown.substring(openParen + 1, closeParen));
             }
+            currentIndex = closeParen + 1;
         }
         return toReturn;
     }
+
     public static void main(String[] args) throws IOException {
-		Path fileName = Path.of(args[0]);
-	    String contents = Files.readString(fileName);
+        Path fileName = Path.of(args[0]);
+        String contents = Files.readString(fileName);
         ArrayList<String> links = getLinks(contents);
         System.out.println(links);
     }
